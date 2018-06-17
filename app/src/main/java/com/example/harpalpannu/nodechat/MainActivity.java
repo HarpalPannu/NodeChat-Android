@@ -1,5 +1,9 @@
 package com.example.harpalpannu.nodechat;
 
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -10,6 +14,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
+
+import com.blikoon.qrcodescanner.QrCodeActivity;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -192,5 +198,53 @@ public class MainActivity extends AppCompatActivity {
 
         });
         socket.connect();
+    }
+
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        if(resultCode != Activity.RESULT_OK)
+        {
+            Log.d("z","COULD NOT GET A GOOD RESULT.");
+            if(data==null)
+                return;
+            //Getting the passed result
+            String result = data.getStringExtra("com.blikoon.qrcodescanner.error_decoding_image");
+            if( result!=null)
+            {
+                AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+                alertDialog.setTitle("Scan Error");
+                alertDialog.setMessage("QR Code could not be scanned");
+                alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        });
+                alertDialog.show();
+            }
+            return;
+
+        }
+        if(requestCode == 101)
+        {
+            if(data==null)
+                return;
+            //Getting the passed result
+            String result = data.getStringExtra("com.blikoon.qrcodescanner.got_qr_scan_relult");
+            JSONObject obj = new JSONObject();
+            try {
+                obj.put("ID", result );
+                EditText editText = findViewById(R.id.editText2);
+                obj.put("username",editText.getText().toString() );
+            } catch (JSONException e) {
+                Log.d("Hz",e.getMessage());
+            }
+            socket.emit("gotID", obj);
+        }
+    }
+
+    public void scan(View view) {
+        Intent i = new Intent(MainActivity.this,QrCodeActivity.class);
+        startActivityForResult( i,101);
     }
 }
